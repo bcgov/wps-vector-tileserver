@@ -4,8 +4,8 @@ description: |
   compliance.
 spec:
   - name: PIA
-    status: PIA_STATUS_HERE
+    status: refer to https://github.com/bcgov/wps/COMPLIANCE.yaml
     last-updated: '2021-11-24T17:38:47.079Z'
   - name: STRA
-    status: STRA_STATUS_HERE
+    status: refer to https://github.com/bcgov/wps/COMPLIANCE.yaml
     last-updated: '2021-11-24T17:38:47.079Z'

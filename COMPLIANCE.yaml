@@ -1,0 +1,11 @@
+name: compliance
+description: |
+  This document is used to track a projects PIA and STRA
+  compliance.
+spec:
+  - name: PIA
+    status: refer to https://github.com/bcgov/wps/COMPLIANCE.yaml
+    last-updated: '2021-11-24T17:38:47.079Z'
+  - name: STRA
+    status: refer to https://github.com/bcgov/wps/COMPLIANCE.yaml
+    last-updated: '2021-11-24T17:38:47.079Z'

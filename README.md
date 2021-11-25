@@ -36,6 +36,13 @@ unzip pg_tileserv
 export DATABASE_URL=postgresql://tileserv:tileserv@localhost/tileserv
 ./pg_tileserv
 ```
+### Install binary requirements
+Install gdal
+
+#### Ubuntu
+```bash
+sudo apt install gdal-bin
+```
 
 ### Install python requirements
 

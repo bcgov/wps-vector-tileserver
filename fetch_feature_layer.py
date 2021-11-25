@@ -9,54 +9,51 @@ import urllib.parse
 import urllib.request
 import os
 import json
-# import arcpy
-
-# arcpy.env.overwriteOutput = True
-
-# Specify REST URL for service JSON to be returned
-url = "https://maps.gov.bc.ca/arcserver/rest/services/whse/bcgw_pub_whse_legal_admin_boundaries/MapServer/2/query?"
+import tempfile
+import fire
+import subprocess
 
 
-def fetch_object_list():
+def fetch_object_list(url: str):
+    """
+    Fetch object list from a feature layer.
+
+    url: layer url to fetch (e.g. https://maps.gov.bc.ca/arcserver/rest/services/whse/bcgw_pub_whse_legal_admin_boundaries/MapServer/2)
+    """
+    print(f'fetching object list for {url}...')
 
     params = {
         'where': '1=1',
-        # 'where': 'objectid<800',
         'geometryType': 'esriGeometryEnvelope',
         'spatialRel': 'esriSpatialRelIntersects',
-        'outSR': '102100',
-        'outFields': '*',
+        # 'outSR': '102100',
+        # 'outFields': '*',
         'returnGeometry': 'false',
         'returnIdsOnly': 'true',
-        #           'relationParam': '',
-        #           'geometryPrecision': '',
-        #           'returnIdsOnly': 'false',
-        #           'returnCountOnly': 'false',
-        #           'orderByFields': '',
-        #           'groupByFieldsForStatistics': '',
-        #           'returnZ': 'false',
-        #           'returnM': 'false',
-        #           'returnDistinctValues': 'false',
-        #             'f': 'json'
         'f': 'json'
     }
 
     encode_params = urllib.parse.urlencode(params).encode("utf-8")
-
-    print('url open...')
-    response = urllib.request.urlopen(url, encode_params)
-    print('read...')
+    response = urllib.request.urlopen(f'{url}/query?', encode_params)
     json_data = json.loads(response.read())
     return json_data['objectIds']
 
 
-def fetch_object(object_id):
+def fetch_object(object_id: int, url: str):
+    """
+    Fetch a single object from a feature layer. We have to fetch objects one by one, because they can get pretty big. Big enough,
+    that if you ask for more than one at a time, you're likely to encounter 500 errors.
+
+    object_id: object id to fetch (e.g. 1)
+    url: layer url to fetch (e.g. https://maps.gov.bc.ca/arcserver/rest/services/whse/bcgw_pub_whse_legal_admin_boundaries/MapServer/2)
+    """
+    print(f'fetching object {object_id}')
 
     params = {
-        'where': 'objectid=' + str(object_id),
+        'where': f'objectid={object_id}',
         'geometryType': 'esriGeometryEnvelope',
         'spatialRel': 'esriSpatialRelIntersects',
-        'outSR': '102100',
+        # 'outSR': '102100',
         'outFields': '*',
         'returnGeometry': 'true',
         'returnIdsOnly': 'false',
@@ -64,35 +61,36 @@ def fetch_object(object_id):
     }
 
     encode_params = urllib.parse.urlencode(params).encode("utf-8")
-
-    print('url open...')
-    response = urllib.request.urlopen(url, encode_params)
-    print('read...')
+    response = urllib.request.urlopen(f'{url}/query?', encode_params)
     json_data = json.loads(response.read())
     return json_data
 
+def sync_layer(url: str, host: str, dbname: str, user: str, password: str, table: str):
+    """
+    Sync a feature layer.
 
-# print('write json...')
-# with open("mapservice.json", "wb") as ms_json:
-#     ms_json.write(json)
+    url: layer url to sync (e.g. https://maps.gov.bc.ca/arcserver/rest/services/whse/bcgw_pub_whse_legal_admin_boundaries/MapServer/2)
+    host: database host (e.g. localhost)
+    dbname: database name (e.g. tileserver)
+    user: database user (e.g. tileserver)
+    password: database password (e.g. tileserver)
+    table: table name (e.g. my_fancy_table)
+    """
+    print(f'syncing {url}...')
 
-# # ws = os.getcwd() + os.sep
-# # arcpy.JSONToFeatures_conversion("mapservice.json", ws + "mapservice.shp", )
-
-# print('done.')
-if __name__ == "__main__":
-    ids = fetch_object_list()
+    ids = fetch_object_list(url)
     for id in ids:
-        print(f'process {id}...')
-        obj = fetch_object(id)
-        filename = f'obj_{id}.json'
-        with open(filename, "w") as f:
-            json.dump(obj, f)
-        print(f'dump to database {filename}')
-        # TODO: there's some issue with 453 (that's the Fraser Fire Zone)
-        os.system(
-            f'ogr2ogr -f "PostgreSQL" PG:"dbname=tileserv host=localhost user=tileserv password=tileserv" "{filename}" -nln fire_centres')
+        obj = fetch_object(id, url)
+        with tempfile.TemporaryDirectory() as temporary_path:
+            filename = os.path.join(os.getcwd(), temporary_path, f'obj_{id}.json')
+            with open(filename, "w") as f:
+                json.dump(obj, f)
+            # TODO: there's some issue with 453 (that's the Fraser Fire Zone)
+            command = f'ogr2ogr -f "PostgreSQL" PG:"dbname={dbname} host={host} user={user} password={password}" "{filename}" -nln {table}'
+            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+            process.wait()
+            print(f'process exited with code {process.returncode}')
+            os.remove(filename)
 
-        os.remove(filename)
-
-        # ogr2ogr -f "PostgreSQL" PG:"dbname=wps host=localhost user=wps password=wps" "obj_453.json" -nln fire_zones
+if __name__ == '__main__':
+    fire.Fire(sync_layer)

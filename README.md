@@ -68,11 +68,15 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 
 ### Using an arcserver rest endpoint
 
-Given some arcserver layer endpoint, e.g.: https://maps.gov.bc.ca/arcserver/rest/services/whse/bcgw_pub_whse_legal_admin_boundaries/MapServer/8
+Given some arcserver layer endpoint, e.g.: [Fire Zones](https://maps.gov.bc.ca/arcserver/rest/services/whse/bcgw_pub_whse_legal_admin_boundaries/MapServer/8) or [Fire Centres](https://maps.gov.bc.ca/arcserver/rest/services/whse/bcgw_pub_whse_legal_admin_boundaries/MapServer/2)
 
-
+Use the `fetch_feature_layer.py` helper script:
 ```bash
-poetry run python fetch_feature_layer.py https://maps.gov.bc.ca/arcserver/rest/services/whse/bcgw_pub_whse_legal_admin_boundaries/MapServer/8
+poetry run python fetch_feature_layer.py --help
+```
+e.g.:
+```bash
+poetry run python fetch_feature_layer.py https://maps.gov.bc.ca/arcserver/rest/services/whse/bcgw_pub_whse_legal_admin_boundaries/MapServer/8 localhost tileserv tileserv tileserv fire_zones
 ```
 
 ### Using a shapefile

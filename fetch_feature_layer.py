@@ -80,10 +80,14 @@ def sync_layer(url: str, host: str, dbname: str, user: str, password: str, table
 
     ids = fetch_object_list(url)
     for id in ids:
+        if not id == 453:
+            continue
         obj = fetch_object(id, url)
         with tempfile.TemporaryDirectory() as temporary_path:
             filename = os.path.join(os.getcwd(), temporary_path, f'obj_{id}.json')
             with open(filename, "w") as f:
+                json.dump(obj, f)
+            with open('moo.json', 'w') as f:
                 json.dump(obj, f)
             # TODO: there's some issue with 453 (that's the Fraser Fire Zone)
             command = f'ogr2ogr -f "PostgreSQL" PG:"dbname={dbname} host={host} user={user} password={password}" "{filename}" -nln {table}'

@@ -1,21 +1,26 @@
 # wps-tileserver
+
 Vector tile server for the Wildfire Predictive Services Unit
 
 [![Lifecycle:Experimental](https://img.shields.io/badge/Lifecycle-Experimental-339999)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.md)
 
-
 ## Overview
 
 The intention of this project is to:
+
 - provide tools to easily spin up a vector tile server in openshift, in a project agnostic manner.
 - provide tools to manually pull data from an esri arc server into a postgis database.
 - provide tools that periodically synchronize data from an esri arc server into postgis.
+
 ### Components
+
 - postgis database server. (it is assumed you have a working postgis database server)
 - pg_tileserv - serves up vector tiles from postgis server.
 - proxy server (varnish?) - caches responses.
 - sync cronjob - updates database periodically.
+
 ### Reference
+
 https://blog.crunchydata.com/blog/production-postgis-vector-tiles-caching
 https://github.com/CrunchyData/pg_tileserv
 
@@ -24,6 +29,7 @@ https://github.com/CrunchyData/pg_tileserv
 ### Assumptions
 
 - postgresql server with postgis running locally
+
 ### Configure pg_tile server
 
 Download the latest [pg_tileserver](https://github.com/CrunchyData/pg_tileserv), unzip and start.
@@ -36,18 +42,13 @@ unzip pg_tileserv
 export DATABASE_URL=postgresql://tileserv:tileserv@localhost/tileserv
 ./pg_tileserv
 ```
-### Install binary requirements
-Install gdal
-
-#### Ubuntu
-```bash
-sudo apt install gdal-bin
-```
 
 ### Install python requirements
 
-*This step only required if you're going to be using the python scripts in this repo to load data. If you're loading directly from shapefiles, then skip this step.*
+_This step only required if you're going to be using the python scripts in this repo to load data. If you're loading directly from shapefiles, then skip this step._
+
 #### Assumptions
+
 - appropriate python version is install
 - [python poetry](https://python-poetry.org/) is installed
 
@@ -56,7 +57,9 @@ sudo apt install gdal-bin
 ```bash
 poetry install
 ```
+
 ## Loading data
+
 #### Create a user and database for your tileserver
 
 ```sql
@@ -71,10 +74,13 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 Given some arcserver layer endpoint, e.g.: [Fire Zones](https://maps.gov.bc.ca/arcserver/rest/services/whse/bcgw_pub_whse_legal_admin_boundaries/MapServer/8) or [Fire Centres](https://maps.gov.bc.ca/arcserver/rest/services/whse/bcgw_pub_whse_legal_admin_boundaries/MapServer/2)
 
 Use the `fetch_feature_layer.py` helper script:
+
 ```bash
 poetry run python fetch_feature_layer.py --help
 ```
+
 e.g.:
+
 ```bash
 poetry run python fetch_feature_layer.py https://maps.gov.bc.ca/arcserver/rest/services/whse/bcgw_pub_whse_legal_admin_boundaries/MapServer/8 localhost tileserv tileserv tileserv fire_zones
 ```
@@ -84,11 +90,15 @@ poetry run python fetch_feature_layer.py https://maps.gov.bc.ca/arcserver/rest/s
 ```bash
 ogr2ogr -f "PostgreSQL" PG:"dbname=tileserv host=localhost user=tileserv password=tileserv" "my_shapefile.shp" -lco precision=NO -nln fire_area_thessian_polygons
 ```
+
 ## Deploy
+
 ### Assumptions
+
 - You have the oc command line installed and you're logged in.
 - You have docker installed locally.
 - You have a postgres database in your target openshift environment that can be accessed by pg_tileserv (you made need to add additional rules to allow your tile server to communicate with your database.)
+
 ### Instructions
 
 #### Prepare your openshift environment
@@ -126,4 +136,3 @@ The easiest way to achieve this, is to tunnel to your database server and then r
 ```bash
 oc port-forward patroni-wps-mapserver-prototype-1 5432:5432
 ```
-

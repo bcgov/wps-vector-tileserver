@@ -13,6 +13,8 @@ GeoAlchemy2 = "^0.9.4"
 Shapely = "^1.8.0"
 
 [tool.poetry.dev-dependencies]
+pylint = "^2.12.1"
+autopep8 = "^1.6.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -1,10 +1,10 @@
-# Taken from:
-# https://support.esri.com/en/technical-article/000019645
-# Minus the token stuff
+"""
+Fetch a feature layer from an arcgis server and write/update it to a PostGIS database.
 
-# referenced https://developers.arcgis.com/rest/services-reference/enterprise/query-feature-service-layer-.htm
-
-
+references:
+- https://developers.arcgis.com/rest/services-reference/enterprise/query-feature-service-layer-.htm
+- https://support.esri.com/en/technical-article/000019645
+"""
 import urllib.parse
 import urllib.request
 import json
@@ -23,31 +23,34 @@ def get_column_type(value):
     """ Return the correct sqlalchemy column type for a given value. """
     if isinstance(value, int):
         return Integer()
-    elif isinstance(value, float):
+    if isinstance(value, float):
         return Float()
-    elif isinstance(value, str):
+    if isinstance(value, str):
         return Text()
     raise Exception(f'unknown type {type(value)}')
 
-def create_table_schema(meta_data: MetaData, data: dict, table_name: str, geom_type: str, srid: int) -> Table:
+
+def create_table_schema(meta_data: MetaData, data: dict, table_name: str, geom_type: str,
+                        srid: int) -> Table:
     """
     Create a table schema.
-
     geom_type: geometry type (e.g. POLYGON or MULTIPOLYGON)
     srid: spatial reference id (e.g. 4326)
     """
     columns = {}
     for feature in data['features']:
         for key, value in feature['properties'].items():
-            if not key in columns.keys():
-                columns[key] = Column(key.lower(), get_column_type(value))  
-                # print(f'{key}:{value} {type(value)}')
+            if not key in columns:
+                columns[key] = Column(key.lower(), get_column_type(value))
 
     return Table(table_name, meta_data,
                  Column('id', Integer(), primary_key=True, nullable=False),
-                 Column('geom', Geometry(geometry_type=geom_type, srid=srid, spatial_index=True, from_text='ST_GeomFromEWKT', name='geometry'), nullable=False),
-                 Column('create_date', TIMESTAMP(timezone=True), nullable=False),
-                 Column('update_date', TIMESTAMP(timezone=True), nullable=False),
+                 Column('geom', Geometry(geometry_type=geom_type, srid=srid, spatial_index=True,
+                        from_text='ST_GeomFromEWKT', name='geometry'), nullable=False),
+                 Column('create_date', TIMESTAMP(
+                     timezone=True), nullable=False),
+                 Column('update_date', TIMESTAMP(
+                     timezone=True), nullable=False),
                  *list(columns.values()),
                  schema=None)
 
@@ -73,15 +76,16 @@ def fetch_object_list(url: str):
 
     encode_params = urllib.parse.urlencode(params).encode("utf-8")
     print(f'{url}/query?{encode_params.decode()}')
-    response = urllib.request.urlopen(f'{url}/query?', encode_params)
-    json_data = json.loads(response.read())
+    with urllib.request.urlopen(f'{url}/query?', encode_params) as response:
+        json_data = json.loads(response.read())
     return json_data['objectIds']
 
 
 def fetch_object(object_id: int, url: str):
     """
-    Fetch a single object from a feature layer. We have to fetch objects one by one, because they can get pretty big. Big enough,
-    that if you ask for more than one at a time, you're likely to encounter 500 errors.
+    Fetch a single object from a feature layer. We have to fetch objects one by one, because they
+    can get pretty big. Big enough, that if you ask for more than one at a time, you're likely to
+    encounter 500 errors.
 
     object_id: object id to fetch (e.g. 1)
     url: layer url to fetch (e.g. https://maps.gov.bc.ca/arcserver/rest/services/whse/bcgw_pub_whse_legal_admin_boundaries/MapServer/2)
@@ -101,11 +105,13 @@ def fetch_object(object_id: int, url: str):
 
     encode_params = urllib.parse.urlencode(params).encode("utf-8")
     print(f'{url}/query?{encode_params.decode()}')
-    response = urllib.request.urlopen(f'{url}/query?', encode_params)
-    json_data = json.loads(response.read())
+    with urllib.request.urlopen(f'{url}/query?', encode_params) as response:
+        json_data = json.loads(response.read())
     return json_data
 
-def sync_layer(url: str, host: str, dbname: str, user: str, password: str, table: str, geom_type: str = 'MULTIPOLYGON', srid: int = 4326, port: int = 5432):
+
+def sync_layer(url: str, host: str, dbname: str, user: str, password: str, table: str,
+               geom_type: str = 'MULTIPOLYGON', srid: int = 4326, port: int = 5432):
     """
     Sync a feature layer.
 
@@ -121,19 +127,21 @@ def sync_layer(url: str, host: str, dbname: str, user: str, password: str, table
     print(f'syncing {url}...')
 
     meta_data = MetaData()
-    DB_STRING = f'postgresql://{user}:{password}@{host}:{port}/{dbname}'
-    engine = create_engine(DB_STRING, connect_args={'options': '-c timezone=utc'})
+    db_string = f'postgresql://{user}:{password}@{host}:{port}/{dbname}'
+    engine = create_engine(db_string, connect_args={
+                           'options': '-c timezone=utc'})
     table_schema = None
 
     with engine.connect() as connection:
 
         ids = fetch_object_list(url)
-        for id in ids:
-            obj = fetch_object(id, url)
+        for object_id in ids:
+            obj = fetch_object(object_id, url)
 
             if table_schema is None:
                 # We base our table off the first object we get back.
-                table_schema = create_table_schema(meta_data, obj, table, geom_type, srid)
+                table_schema = create_table_schema(
+                    meta_data, obj, table, geom_type, srid)
 
             if not engine.dialect.has_table(connection, table):
                 meta_data.create_all(engine)
@@ -141,15 +149,18 @@ def sync_layer(url: str, host: str, dbname: str, user: str, password: str, table
             for feature in obj['features']:
                 geom = shape(feature['geometry'])
 
-                # If we're expecting multipolygons, we need to convert the polygon to a multipolygon.
+                # If we're expecting multipolygons, we need to convert the polygon to a
+                # multipolygon.
                 if geom_type == 'MULTIPOLYGON' and isinstance(geom, Polygon):
                     geom = MultiPolygon([geom])
 
                 wkt = wkb.dumps(geom, hex=True, srid=srid)
-                props = {key.lower(): value for key, value in feature['properties'].items()}
+                props = {key.lower(): value for key,
+                         value in feature['properties'].items()}
                 values = {'id': feature['id'], 'geom': wkt, **props}
 
-                rows = connection.execute(select(table_schema).where(table_schema.c.id == feature['id']))
+                rows = connection.execute(select(table_schema).where(
+                    table_schema.c.id == feature['id']))
                 exists = False
                 for row in rows:
                     if row:
@@ -159,11 +170,13 @@ def sync_layer(url: str, host: str, dbname: str, user: str, password: str, table
                 values['update_date'] = datetime.now()
                 if exists:
                     print('record exists, updating')
-                    connection.execute(table_schema.update().where(table_schema.c.id == feature['id']).values(values))
+                    connection.execute(table_schema.update().where(
+                        table_schema.c.id == feature['id']).values(values))
                 else:
                     print('create new record')
                     values['create_date'] = values['update_date']
                     connection.execute(table_schema.insert().values(values))
+
 
 if __name__ == '__main__':
     fire.Fire(sync_layer)

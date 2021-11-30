@@ -34,6 +34,7 @@ def fetch_object_list(url: str):
     }
 
     encode_params = urllib.parse.urlencode(params).encode("utf-8")
+    print(f'{url}/query?{encode_params.decode()}')
     response = urllib.request.urlopen(f'{url}/query?', encode_params)
     json_data = json.loads(response.read())
     return json_data['objectIds']
@@ -61,6 +62,7 @@ def fetch_object(object_id: int, url: str):
     }
 
     encode_params = urllib.parse.urlencode(params).encode("utf-8")
+    print(f'{url}/query?{encode_params.decode()}')
     response = urllib.request.urlopen(f'{url}/query?', encode_params)
     json_data = json.loads(response.read())
     return json_data
@@ -80,16 +82,14 @@ def sync_layer(url: str, host: str, dbname: str, user: str, password: str, table
 
     ids = fetch_object_list(url)
     for id in ids:
-        if not id == 453:
-            continue
         obj = fetch_object(id, url)
         with tempfile.TemporaryDirectory() as temporary_path:
             filename = os.path.join(os.getcwd(), temporary_path, f'obj_{id}.json')
             with open(filename, "w") as f:
                 json.dump(obj, f)
-            with open('moo.json', 'w') as f:
-                json.dump(obj, f)
-            # TODO: there's some issue with 453 (that's the Fraser Fire Zone)
+            # NOTE: There's an issue with 453 (that's the Fraser Fire Zone) - it's being served up as a multipolygon which happens
+            # to also contain Haida Gwaii. All other features are polygons, so the table as greated with a polygon geom column. When
+            # this feature is encountered, it fails because it can't squeeze a multipolygon into a polygon.
             command = f'ogr2ogr -f "PostgreSQL" PG:"dbname={dbname} host={host} user={user} password={password}" "{filename}" -nln {table}'
             process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
             process.wait()

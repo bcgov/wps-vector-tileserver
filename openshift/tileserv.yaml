@@ -109,6 +109,13 @@ objects:
                 periodSeconds: 30
                 successThreshold: 1
                 timeoutSeconds: 5
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 200m
+                  memory: 512Mi
   - apiVersion: v1
     kind: Service
     metadata:
@@ -118,7 +125,7 @@ objects:
         name: tileserv
     spec:
       ports:
-        - name: 7800-tcp
+        - name: 8080-tcp
           protocol: TCP
           port: 80
           targetPort: 8080
@@ -134,7 +141,7 @@ objects:
     spec:
       host: tileserv-dev.apps.silver.devops.gov.bc.ca
       port:
-        targetPort: 7800-tcp
+        targetPort: 8080-tcp
       to:
         kind: Service
         name: tileserv

@@ -50,7 +50,7 @@ objects:
           containers:
             - name: nginx
               image: ${IMAGE_REGISTRY}/${IMAGE_NAMESPACE}/nginx-tilecache
-              imagePullPolicy: IfNotPresent
+              imagePullPolicy: Always
               readinessProbe:
                 failureThreshold: 3
                 initialDelaySeconds: 10

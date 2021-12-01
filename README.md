@@ -119,7 +119,7 @@ docker login -u developer -p $(oc whoami -t) image-registry.apps.silver.devops.g
 docker push image-registry.apps.silver.devops.gov.bc.ca/e1e498-tools/pg_tileserv:latest
 
 # prepare nginx
-oc -n e1e498-tools new-build nginx:1.20~https://github.com/bcgov/wps-vector-tileserver.git --context-dir=openshift --name=nginx-tilecache --strategy=docker
+oc -n e1e498-tools new-build nginx~https://github.com/bcgov/wps-vector-tileserver.git --context-dir=openshift --name=nginx-tilecache
 ```
 
 #### Deploy pg_tilserver

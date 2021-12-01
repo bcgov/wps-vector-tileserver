@@ -124,7 +124,7 @@ oc new-build nginx~[git hub repository] --context-dir=[folder with nginx config]
 # e.g.: oc -n e1e498-tools new-build nginx~https://github.com/bcgov/wps-vector-tileserver.git --context-dir=openshift --name=nginx-tilecache
 ```
 
-#### Deploy pg_tilserver
+#### Deploy pg_tileserver
 
 ```bash
 # deploy pg_tileserv

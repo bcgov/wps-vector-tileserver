@@ -104,22 +104,22 @@ ogr2ogr -f "PostgreSQL" PG:"dbname=tileserv host=localhost user=tileserv passwor
 #### Prepare your openshift environment
 
 ```bash
-# we have docker limits, so pull the images local - then put them in openshift
+# we have docker limits, so pull the pg_tileserv images local - then put them in openshift
 
 # pull local
-docker pull eeacms/varnish
 docker pull pramsey/pg_tileserv
 
 # tag for upload
-docker tag eeacms/varnish image-registry.apps.silver.devops.gov.bc.ca/e1e498-tools/varnish:latest
 docker tag pramsey/pg_tileserv image-registry.apps.silver.devops.gov.bc.ca/e1e498-tools/pg_tileserv:latest
 
 # log in to openshift docker
 docker login -u developer -p $(oc whoami -t) image-registry.apps.silver.devops.gov.bc.ca
 
 # push it
-docker push image-registry.apps.silver.devops.gov.bc.ca/e1e498-tools/varnish:latest
 docker push image-registry.apps.silver.devops.gov.bc.ca/e1e498-tools/pg_tileserv:latest
+
+# prepare nginx
+oc -n e1e498-tools new-build nginx:1.20~https://github.com/bcgov/wps-vector-tileserver.git --context-dir=openshift --name=nginx-tilecache --strategy=docker
 ```
 
 #### Deploy pg_tilserver

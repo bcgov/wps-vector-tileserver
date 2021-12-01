@@ -49,7 +49,7 @@ _This step only required if you're going to be using the python scripts in this 
 
 #### Assumptions
 
-- appropriate python version is install
+- appropriate python version is installed
 - [python poetry](https://python-poetry.org/) is installed
 
 #### Install python requirements

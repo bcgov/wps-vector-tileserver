@@ -4,7 +4,7 @@ metadata:
   name: tileserv
 parameters:
   - name: PG_TILESERV_IMAGE_TAG
-    value: 'latest'
+    value: "latest"
   - name: IMAGE_REGISTRY
     value: image-registry.apps.silver.devops.gov.bc.ca
   - name: IMAGE_NAMESPACE
@@ -48,6 +48,37 @@ objects:
             name: tileserv
         spec:
           containers:
+            - name: nginx
+              image: ${IMAGE_REGISTRY}/${IMAGE_NAMESPACE}/nginx-tilecache
+              imagePullPolicy: Always
+              readinessProbe:
+                failureThreshold: 3
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                httpGet:
+                  path: /health
+                  port: 8080
+                timeoutSeconds: 1
+              livenessProbe:
+                failureThreshold: 3
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                httpGet:
+                  path: /health
+                  port: 8080
+                timeoutSeconds: 1
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
             - name: pgtileserv
               image: ${IMAGE_REGISTRY}/${IMAGE_NAMESPACE}/pg_tileserv:${PG_TILESERV_IMAGE_TAG}
               ports:
@@ -78,37 +109,39 @@ objects:
                 periodSeconds: 30
                 successThreshold: 1
                 timeoutSeconds: 5
-            # - name: varnish
-            #   image: ${IMAGE_REGISTRY}/${IMAGE_NAMESPACE}/varnish:latest
-            #   ports:
-            #     - containerPort: 80
-            #       protocol: TCP
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 200m
+                  memory: 512Mi
   - apiVersion: v1
     kind: Service
     metadata:
       name: tileserv
       labels:
-          app: tileserv
-          name: tileserv
+        app: tileserv
+        name: tileserv
     spec:
       ports:
-        - name: 7800-tcp
+        - name: 8080-tcp
           protocol: TCP
           port: 80
-          targetPort: 7800
+          targetPort: 8080
       selector:
         name: tileserv
   - apiVersion: route.openshift.io/v1
     kind: Route
     metadata:
+      name: tileserv
+      labels:
+        app: tileserv
         name: tileserv
-        labels:
-          app: tileserv
-          name: tileserv
     spec:
       host: tileserv-dev.apps.silver.devops.gov.bc.ca
       port:
-        targetPort: 7800-tcp
+        targetPort: 8080-tcp
       to:
         kind: Service
         name: tileserv

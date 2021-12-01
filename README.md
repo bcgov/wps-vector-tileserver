@@ -104,7 +104,7 @@ ogr2ogr -f "PostgreSQL" PG:"dbname=tileserv host=localhost user=tileserv passwor
 #### Prepare your openshift environment
 
 ```bash
-# we have docker limits, so pull the pg_tileserv images local - then put them in openshift
+# we have docker limits, so pull the pg_tileserv images locally - then put them in openshift
 
 # pull local
 docker pull pramsey/pg_tileserv

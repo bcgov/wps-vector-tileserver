@@ -4,7 +4,7 @@ metadata:
   name: tileserv
 parameters:
   - name: PG_TILESERV_IMAGE_TAG
-    value: 'latest'
+    value: "latest"
   - name: IMAGE_REGISTRY
     value: image-registry.apps.silver.devops.gov.bc.ca
   - name: IMAGE_NAMESPACE
@@ -48,6 +48,47 @@ objects:
             name: tileserv
         spec:
           containers:
+            - name: varnish
+              image: ${IMAGE_REGISTRY}/${IMAGE_NAMESPACE}/varnish:latest
+              ports:
+                - containerPort: 7900
+                  protocol: TCP
+              env:
+                - name: BACKENDS_PROBE_INTERVAL
+                  value: "15s"
+                - name: BACKENDS_PROBE_TIMEOUT
+                  value: "5s"
+                - name: BACKENDS_PROBE_WINDOW
+                  value: "3"
+                - name: BACKENDS
+                  value: "127.0.0.1:7800"
+                - name: DNS_ENABLED
+                  value: "false"
+                - name: DASHBOARD_USER
+                  value: "admin"
+                - name: DASHBOARD_PASSWORD
+                  value: "admin1234"
+                - name: DASHBOARD_SERVERS
+                  value: "web"
+                - name: PARAM_VALUE
+                  value: "-p default_ttl=600"
+              livenessProbe:
+                failureThreshold: 3
+                initialDelaySeconds: 5
+                periodSeconds: 30
+                successThreshold: 1
+                tcpSocket:
+                  port: 7900
+                timeoutSeconds: 5
+              readinessProbe:
+                httpGet:
+                  path: /
+                  port: 7900
+                failureThreshold: 3
+                initialDelaySeconds: 10
+                periodSeconds: 30
+                successThreshold: 1
+                timeoutSeconds: 5
             - name: pgtileserv
               image: ${IMAGE_REGISTRY}/${IMAGE_NAMESPACE}/pg_tileserv:${PG_TILESERV_IMAGE_TAG}
               ports:
@@ -78,33 +119,28 @@ objects:
                 periodSeconds: 30
                 successThreshold: 1
                 timeoutSeconds: 5
-            # - name: varnish
-            #   image: ${IMAGE_REGISTRY}/${IMAGE_NAMESPACE}/varnish:latest
-            #   ports:
-            #     - containerPort: 80
-            #       protocol: TCP
   - apiVersion: v1
     kind: Service
     metadata:
       name: tileserv
       labels:
-          app: tileserv
-          name: tileserv
+        app: tileserv
+        name: tileserv
     spec:
       ports:
         - name: 7800-tcp
           protocol: TCP
           port: 80
-          targetPort: 7800
+          targetPort: 7900
       selector:
         name: tileserv
   - apiVersion: route.openshift.io/v1
     kind: Route
     metadata:
+      name: tileserv
+      labels:
+        app: tileserv
         name: tileserv
-        labels:
-          app: tileserv
-          name: tileserv
     spec:
       host: tileserv-dev.apps.silver.devops.gov.bc.ca
       port:

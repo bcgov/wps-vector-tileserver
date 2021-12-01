@@ -121,7 +121,7 @@ objects:
         - name: 7800-tcp
           protocol: TCP
           port: 80
-          targetPort: 7900
+          targetPort: 8080
       selector:
         name: tileserv
   - apiVersion: route.openshift.io/v1

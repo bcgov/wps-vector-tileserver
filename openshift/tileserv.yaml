@@ -48,48 +48,37 @@ objects:
             name: tileserv
         spec:
           containers:
-            - name: varnish
-              # image: ${IMAGE_REGISTRY}/${IMAGE_NAMESPACE}/varnish:latest
-              image: registry.redhat.io/rhel8/varnish-6:latest
-              ports:
-                - containerPort: 7900
-                  protocol: TCP
-              env:
-                - name: BACKENDS_PROBE_INTERVAL
-                  value: "15s"
-                - name: BACKENDS_PROBE_TIMEOUT
-                  value: "5s"
-                - name: BACKENDS_PROBE_WINDOW
-                  value: "3"
-                - name: BACKENDS
-                  value: "127.0.0.1:7800"
-                - name: DNS_ENABLED
-                  value: "false"
-                - name: DASHBOARD_USER
-                  value: "admin"
-                - name: DASHBOARD_PASSWORD
-                  value: "admin1234"
-                - name: DASHBOARD_SERVERS
-                  value: "web"
-                - name: PARAM_VALUE
-                  value: "-p default_ttl=600"
-              livenessProbe:
-                failureThreshold: 3
-                initialDelaySeconds: 5
-                periodSeconds: 30
-                successThreshold: 1
-                tcpSocket:
-                  port: 7900
-                timeoutSeconds: 5
+            - name: nginx
+              image: ${IMAGE_REGISTRY}/${IMAGE_NAMESPACE}/nginx-tilecache
+              imagePullPolicy: IfNotPresent
               readinessProbe:
-                httpGet:
-                  path: /
-                  port: 7900
                 failureThreshold: 3
                 initialDelaySeconds: 10
-                periodSeconds: 30
+                periodSeconds: 10
                 successThreshold: 1
-                timeoutSeconds: 5
+                httpGet:
+                  path: /health
+                  port: 8080
+                timeoutSeconds: 1
+              livenessProbe:
+                failureThreshold: 3
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                httpGet:
+                  path: /health
+                  port: 8080
+                timeoutSeconds: 1
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
             - name: pgtileserv
               image: ${IMAGE_REGISTRY}/${IMAGE_NAMESPACE}/pg_tileserv:${PG_TILESERV_IMAGE_TAG}
               ports:

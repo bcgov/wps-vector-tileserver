@@ -1,3 +1,4 @@
+from urllib.parse import quote_plus as urlquote
 from datetime import datetime
 import fire
 from sqlalchemy import Table, MetaData, Column, Integer, Float, Text, TIMESTAMP, create_engine, func
@@ -8,7 +9,7 @@ from geoalchemy2.types import Geometry
 def generate_custom(host: str, dbname: str, user: str, password: str, fire_zone_label_table: str,
                     fire_centre_table: str, port: int = 5432, srid: int = 4326):
     meta_data = MetaData()
-    db_string = f'postgresql://{user}:{password}@{host}:{port}/{dbname}'
+    db_string = f'postgresql://{user}:{urlquote(password)}@{host}:{port}/{dbname}'
     engine = create_engine(db_string, connect_args={
                            'options': '-c timezone=utc'})
 

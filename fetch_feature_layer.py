@@ -7,6 +7,7 @@ references:
 """
 import urllib.parse
 import urllib.request
+from urllib.parse import quote_plus as urlquote
 import json
 from datetime import datetime
 import fire
@@ -186,7 +187,7 @@ def sync_layer(url: str, host: str, dbname: str, user: str, password: str, table
     print(f'syncing {url}...')
 
     meta_data = MetaData()
-    db_string = f'postgresql://{user}:{password}@{host}:{port}/{dbname}'
+    db_string = f'postgresql://{user}:{urlquote(password)}@{host}:{port}/{dbname}'
     engine = create_engine(db_string, connect_args={
                            'options': '-c timezone=utc'})
     table_schema = None

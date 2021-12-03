@@ -24,6 +24,8 @@ parameters:
   - name: POSTGRES_DATABASE
     required: true
     value: tileserv
+  - name: HOST
+    value: wps-dev-tileserv.apps.silver.devops.gov.bc.ca
 
 objects:
   # pgtileserv: 7800
@@ -139,7 +141,7 @@ objects:
         app: tileserv
         name: tileserv
     spec:
-      host: tileserv-dev.apps.silver.devops.gov.bc.ca
+      host: ${HOST}
       port:
         targetPort: 8080-tcp
       to:

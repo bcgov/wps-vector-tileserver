@@ -14,7 +14,7 @@ from sqlalchemy import Table, MetaData, Column, Integer, Float, Text, TIMESTAMP,
 from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
 from geoalchemy2.types import Geometry
-from shapely.geometry import point, shape
+from shapely.geometry import shape
 from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry.polygon import Polygon
 from shapely.geometry.base import BaseGeometry
@@ -226,7 +226,7 @@ def sync_layer(url: str, host: str, dbname: str, user: str, password: str, table
                     save_feature('POINT', geom.centroid, srid,
                                  feature, connection, point_table_schema)
                 elif isinstance(geom, MultiPolygon):
-                    # We can't update the labels for each polygonm, we don't have an id
+                    # We can't update the labels for each polygon, we don't have an id
                     # for it. So we have to drop them all.
                     connection.execute(point_table_schema.delete(
                         point_table_schema.c.feature_id == feature['id']))

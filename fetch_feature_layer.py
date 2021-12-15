@@ -33,28 +33,6 @@ def get_column_type(value):
     raise Exception(f'unknown type {type(value)}')
 
 
-def create_point_table_schema(meta_data: MetaData, data: dict, table_name: str, srid: int) -> Table:
-    """
-    """
-    columns = {}
-    for feature in data['features']:
-        for key, value in feature['properties'].items():
-            if not key in columns:
-                columns[key] = Column(key.lower(), get_column_type(value))
-
-    return Table(table_name, meta_data,
-                 Column('id', Integer(), primary_key=True, nullable=False),
-                 Column('feature_id', Integer(), nullable=False),
-                 Column('geom', Geometry(geometry_type="POINT", srid=srid, spatial_index=True,
-                        from_text='ST_GeomFromEWKT', name='geometry'), nullable=False),
-                 Column('create_date', TIMESTAMP(
-                     timezone=True), nullable=False),
-                 Column('update_date', TIMESTAMP(
-                     timezone=True), nullable=False),
-                 *list(columns.values()),
-                 schema=None)
-
-
 def create_table_schema(meta_data: MetaData, data: dict, table_name: str, geom_type: str,
                         srid: int) -> Table:
     """
@@ -204,10 +182,11 @@ def sync_layer(url: str, host: str, dbname: str, user: str, password: str, table
                 table_schema = create_table_schema(
                     meta_data, obj, table, geom_type, srid)
             if point_table_schema is None and geom_type in ('POLYGON', 'MULTIPOLYGON'):
-                point_table_schema = create_point_table_schema(meta_data,
-                                                               obj,
-                                                               f'{table}_labels',
-                                                               srid)
+                point_table_schema = create_table_schema(meta_data,
+                                                         obj,
+                                                         f'{table}_labels',
+                                                         'POINT',
+                                                         srid)
 
             if not engine.dialect.has_table(connection, table):
                 table_schema.create(engine)

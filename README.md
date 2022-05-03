@@ -87,9 +87,16 @@ poetry run python fetch_feature_layer.py https://maps.gov.bc.ca/arcserver/rest/s
 
 ### Using a shapefile
 
+-nlt <type> Define the geometry type for the created layer
+-lco NAME=VALUE Layer creation option (format specific)
+-nln <name> Assign an alternate name to the new layer
+-overwrite Delete the output layer and recreate it empty
+
 ```bash
-ogr2ogr -f "PostgreSQL" PG:"dbname=tileserv host=localhost user=tileserv password=tileserv" "my_shapefile.shp" -lco precision=NO -nln fire_area_thessian_polygons
+ogr2ogr -f "PostgreSQL" PG:"dbname=tileserv host=localhost user=tileserv password=tileserv" "my_shapefile.shp" -nlt MULTIPOLYGON -lco precision=NO -nln fire_area_thessian_polygons -overwrite
 ```
+
+_note_ - special characters in the ogr2ogr password string can be escaped with a backslash.
 
 ## Deploy
 
